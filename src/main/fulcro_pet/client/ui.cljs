@@ -4,7 +4,7 @@
 
 
 (def data
-  {:project/name "Fulcro pet project"
+  {:project/name "Fulcro Pet Project"
    :project/boards [{:board/name "Kanban Board"
                      :board/buckets [{:bucket/name "Backlog"
                                       :bucket/tasks [{:task/name        "Add mutations"
@@ -13,7 +13,7 @@
                                                      {:task/name        "Add remoting"
                                                       :task/description "Implement basic server with EQL remoting"
                                                       :task/status      "New"}]
-                                      :bucket/description "New or deffered tasks"}
+                                      :bucket/description "New or deferred tasks"}
                                      {:bucket/name "To Do"
                                       :bucket/tasks [{:task/name        "Add callbacks"
                                                       :task/description "Add on-click functions for actions as computed data"
@@ -41,10 +41,22 @@
 ;; Task component
 ;; -----------------------------------------------------------
 (defsc Task [this {:task/keys [id name description status]}]
-  (dom/div
-   (dom/p "Task: "        name)
-   (dom/p "Description: " description)
-   (dom/p "Status: "      status)))
+  {:initial-state (fn [{:task/keys [id name description status]}]
+                    {:task/id id
+                     :task/name name
+                     :task/description description
+                     :task/status status})}
+  (dom/div {:style {:padding "2px"}}
+   (dom/table {:style {:text-align "left" :width "70%" :background-color "#7FCDCD"}}
+    (dom/tr
+     (dom/th {:style {:width "20%"}} "Task:")
+     (dom/td name))
+    (dom/tr
+     (dom/th "Description:")
+     (dom/td description))
+    (dom/tr
+     (dom/th "Status:")
+     (dom/td status)))))
 
 (def ui-task (comp/factory Task))
 
@@ -53,6 +65,10 @@
 ;; Bucket componenent maps over Task components
 ;; -----------------------------------------------------------
 (defsc Bucket [this {:bucket/keys [name tasks description]}]
+  {:initial-state (fn [{:bucket/keys [name tasks description]}]
+                    {:bucket/name name
+                     :bucket/tasks (map #(comp/get-initial-state Task %) tasks)
+                     :bucket/description description})}
   (dom/div
    (dom/hr)
    (dom/b {:style {:color "blue"}} name)
@@ -67,6 +83,9 @@
 ;; Board component dispalys Busket components
 ;; -----------------------------------------------------------
 (defsc Board [this {:board/keys [name buckets]}]
+  {:initial-state (fn [{:board/keys [name buckets]} ]
+                    {:board/name name
+                     :board/buckets (map #(comp/get-initial-state Bucket %) buckets)})}
   (dom/div
    (map ui-bucket buckets)))
 
@@ -76,9 +95,12 @@
 ;; -----------------------------------------------------------
 ;; Root component dispalys a board
 ;; -----------------------------------------------------------
-(defsc Root [this props]
+(defsc Root [this {:keys [name board]}]
+  {:initial-state (fn [params]
+                    {:name (:project/name data)
+                     :board (comp/get-initial-state Board (get-in data [:project/boards 0]))})}
   (dom/div
-   (dom/h2 "CroPet")
-   (dom/label (get-in data [:project/boards 0 :board/name]))
+   (dom/h2 "Cro-Pet")
+   (dom/h5 name)
    (dom/hr)
-   (ui-board (get-in data [:project/boards 0]))))
+   (ui-board board)))
