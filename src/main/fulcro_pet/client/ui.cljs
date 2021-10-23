@@ -46,7 +46,7 @@
 ;; -----------------------------------------------------------
 ;; Task component
 ;; -----------------------------------------------------------
-(defsc Task [this {:task/keys [id name description status]}]
+(defsc Task [this {:task/keys [id name description status]} {:keys [onclick]}]
   {:query [:task/id :task/name :task/description :task/status]
    :initial-state (fn [{:task/keys [id name description status]}]
                     {:task/id id
@@ -63,10 +63,13 @@
       (dom/th "Description:")
       (dom/td description))
      (dom/tr
-      (dom/th "Status:"),
-      (dom/td status))))))
+      (dom/th "Status:")
+      (dom/td status))
+     (dom/tr 
+      (dom/td  {:colspan "2"  :align "right"}
+        (dom/button {:onClick #(onclick name)} "x" )))))))
 
-(def ui-task (comp/factory Task))
+(def ui-task (comp/factory Task {:keyfn :task/name}))
 
 
 ;; -----------------------------------------------------------
@@ -78,14 +81,15 @@
                     {:list/name name
                      :list/description description
                      :list/tasks (map #(comp/get-initial-state Task %) tasks)})}
-  (dom/div
-   (dom/hr)
-   (dom/b {:style {:color "blue"}} name)
-   (dom/p description ": " (count tasks))
-   (map ui-task tasks)
-   (dom/hr)))
+  (let [onclick (fn [txt] (println "Task " name ": " txt " clicked"))] 
+    (dom/div
+     (dom/hr)
+     (dom/b {:style {:color "blue"}} name)
+     (dom/p description ": " (count tasks))
+     (map (fn [t] (ui-task (comp/computed t {:onclick onclick}))) tasks)
+     (dom/hr))))
 
-(def ui-tasklist (comp/factory TaskList))
+(def ui-tasklist (comp/factory TaskList {:keyfn :list/name}))
 
 
 ;; -----------------------------------------------------------
@@ -99,7 +103,7 @@
   (dom/div
    (map ui-tasklist lists)))
 
-(def ui-board (comp/factory Board))
+(def ui-board (comp/factory Board))     
 
 
 ;; -----------------------------------------------------------
