@@ -47,22 +47,24 @@
 ;; Task component
 ;; -----------------------------------------------------------
 (defsc Task [this {:task/keys [id name description status]}]
-  {:initial-state (fn [{:task/keys [id name description status]}]
+  {:query [:task/id :task/name :task/description :task/status]
+   :initial-state (fn [{:task/keys [id name description status]}]
                     {:task/id id
                      :task/name name
                      :task/description description
                      :task/status status})}
   (dom/div {:style {:padding "2px"}}
-   (dom/table {:style {:text-align "left" :width "70%" :background-color "#7FCDCD"}}
-    (dom/tr
-     (dom/th {:style {:width "20%"}} "Task:")
-     (dom/td name))
-    (dom/tr
-     (dom/th "Description:")
-     (dom/td description))
-    (dom/tr
-     (dom/th "Status:")
-     (dom/td status)))))
+   (dom/table {:style {:textAlign "left" :width "70%" :backgroundColor "#7FCDCD"}}
+    (dom/tbody
+     (dom/tr
+      (dom/th {:style {:width "20%"}} "Task:")
+      (dom/td name))
+     (dom/tr
+      (dom/th "Description:")
+      (dom/td description))
+     (dom/tr
+      (dom/th "Status:"),
+      (dom/td status))))))
 
 (def ui-task (comp/factory Task))
 
@@ -71,10 +73,11 @@
 ;; TaskList componenent maps over Task components
 ;; -----------------------------------------------------------
 (defsc TaskList [this {:list/keys [name tasks description]}]
-  {:initial-state (fn [{:list/keys [name tasks description]}]
+  {:query [:list/name :list/description {:list/tasks (comp/get-query Task)}]
+   :initial-state (fn [{:list/keys [name tasks description]}]
                     {:list/name name
-                     :list/tasks (map #(comp/get-initial-state Task %) tasks)
-                     :list/description description})}
+                     :list/description description
+                     :list/tasks (map #(comp/get-initial-state Task %) tasks)})}
   (dom/div
    (dom/hr)
    (dom/b {:style {:color "blue"}} name)
@@ -82,18 +85,19 @@
    (map ui-task tasks)
    (dom/hr)))
 
-(def ui-list (comp/factory TaskList))
+(def ui-tasklist (comp/factory TaskList))
 
 
 ;; -----------------------------------------------------------
 ;; Board component dispalys task list components
 ;; -----------------------------------------------------------
 (defsc Board [this {:board/keys [name lists]}]
-  {:initial-state (fn [{:board/keys [name lists]} ]
+  {:query [:board/name {:board/lists (comp/get-query TaskList)}]
+   :initial-state (fn [{:board/keys [name lists]} ]
                     {:board/name name
                      :board/lists (map #(comp/get-initial-state TaskList %) lists)})}
   (dom/div
-   (map ui-list lists)))
+   (map ui-tasklist lists)))
 
 (def ui-board (comp/factory Board))
 
@@ -102,7 +106,8 @@
 ;; Root component dispalys a board
 ;; -----------------------------------------------------------
 (defsc Root [this {:keys [name board]}]
-  {:initial-state (fn [params]
+  {:query [:name {:board (comp/get-query Board)}]
+   :initial-state (fn [params]
                     {:name (:project/name data)
                      :board (comp/get-initial-state Board (get-in data [:project/boards 0]))})}
   (dom/div
